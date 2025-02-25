@@ -7,6 +7,7 @@
     <title>Todo App</title>
     <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/css/bootstrap.min.css">
     <link rel="stylesheet" href="https://fonts.googleapis.com/icon?family=Material+Icons">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.css">
     <style>
         body {
             background-color: #f0f0f0;
@@ -41,9 +42,25 @@
         .todo-item:hover {
             background-color: #f2f2f2;
         }
+        .navbar {
+            background-color: #3377ff;
+            color: #fff;
+        }
+        .navbar-nav .nav-link {
+            color: #fff;
+        }
+        .profile-page {
+            padding: 20px;
+        }
     </style>
 </head>
 <body>
+    <nav class="navbar navbar-expand-lg navbar-light bg-light" id="navbar" style="display: none;">
+        <a class="navbar-brand" href="#" id="username-nav">Username</a>
+        <div class="navbar-nav ml-auto">
+            <button id="logout-btn" class="btn btn-sm btn-danger">Logout</button>
+        </div>
+    </nav>
     <div class="container">
         <div id="login-page" style="display: block;">
             <div class="login-page">
@@ -94,7 +111,7 @@
                     </button>
                 </div>
                 <div class="navbar-nav ml-auto">
-                    <button id="logout-btn" class="btn btn-sm btn-danger">Logout</button>
+                    <button id="profile-btn" class="btn btn-sm btn-primary">Profile</button>
                 </div>
             </nav>
             <div class="todo-list">
@@ -124,36 +141,36 @@
             </div>
         </div>
         <div id="profile-page" style="display: none;">
-            <div class="login-page">
+            <div class="profile-page">
                 <h2>Profile</h2>
                 <p>Username: <span id="profile-username"></span></p>
                 <p>Email: <span id="profile-email"></span></p>
                 <button id="edit-profile-btn" class="btn btn-primary">Edit Profile</button>
+                <button id="back-to-todo-btn" class="btn btn-secondary">Back to Todo List</button>
             </div>
         </div>
     </div>
     <script src="https://code.jquery.com/jquery-3.2.1.min.js"></script>
     <script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/js/bootstrap.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.js"></script>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.css">
     <script>
         let users = JSON.parse(localStorage.getItem('users')) || [];
         let todos = JSON.parse(localStorage.getItem('todos')) || [];
         let loggedInUser = localStorage.getItem('loggedInUser');
         let loginExpirationTime = JSON.parse(localStorage.getItem('loginExpirationTime')) || null;
 
-        // Check if user is logged in
         if (loggedInUser && loginExpirationTime && new Date().getTime() / 1000 < loginExpirationTime) {
             $('#login-page').hide();
             $('#signup-page').hide();
             $('#todo-page').show();
+            $('#navbar').show();
+            $('#username-nav').text(loggedInUser);
             renderTodos();
         } else {
             localStorage.removeItem('loggedInUser');
             localStorage.removeItem('loginExpirationTime');
         }
 
-        // Login functionality
         $('#login-form').submit(function(e) {
             e.preventDefault();
             let username = $('#login-username').val();
@@ -162,11 +179,13 @@
             if (user) {
                 localStorage.setItem('loggedInUser', username);
                 let currentTime = new Date().getTime() / 1000;
-                let expirationTime = currentTime + 24 * 60 * 60; // 24 hours
+                let expirationTime = currentTime + 24 * 60 * 60; 
                 localStorage.setItem('loginExpirationTime', JSON.stringify(expirationTime));
                 $('#login-page').hide();
                 $('#signup-page').hide();
                 $('#todo-page').show();
+                $('#navbar').show();
+                $('#username-nav').text(username);
                 renderTodos();
                 toastr.success('Logged in successfully!');
             } else {
@@ -175,16 +194,15 @@
             }
         });
 
-        // Logout functionality
         $('#logout-btn').click(function() {
             localStorage.removeItem('loggedInUser');
             localStorage.removeItem('loginExpirationTime');
             $('#todo-page').hide();
             $('#login-page').show();
+            $('#navbar').hide();
             toastr.success('Logged out successfully!');
         });
 
-        // Add todo functionality
         $('#add-todo-btn').click(function() {
             let todoText = prompt('Enter new todo:');
             if (todoText) {
@@ -196,7 +214,6 @@
             }
         });
 
-        // Render todos
         function renderTodos() {
             $('#todo-list').empty();
             for (let i = 0; i < todos.length; i++) {
@@ -225,7 +242,6 @@
             });
         }
 
-        // Edit todo functionality
         $('#close-edit-modal').click(function() {
             $('#edit-modal').hide();
         });
@@ -240,7 +256,6 @@
             toastr.success('Todo edited successfully!');
         });
 
-        // Link functionality
         $('#signup-link').click(function() {
             $('#login-page').hide();
             $('#signup-page').show();
@@ -249,11 +264,30 @@
             $('#signup-page').hide();
             $('#login-page').show();
         });
-        $('#forgot-password-link').click(function() {
-            // Add forgot password functionality
+
+        $('#profile-btn').click(function() {
+            let user = users.find(u => u.username === loggedInUser);
+            $('#profile-username').text(user.username);
+            $('#profile-email').text(user.email);
+            $('#todo-page').hide();
+            $('#profile-page').show();
         });
+
+        $('#back-to-todo-btn').click(function() {
+            $('#profile-page').hide();
+            $('#todo-page').show();
+        });
+
         $('#edit-profile-btn').click(function() {
-            // Add edit profile functionality
+            let user = users.find(u => u.username === loggedInUser);
+            let newUsername = prompt('Enter new username:', user.username);
+            let newEmail = prompt('Enter new email:', user.email);
+            if (newUsername && newEmail) {
+                user.username = newUsername;
+                user.email = newEmail;
+                toastr.success('Profile updated successfully!');
+                localStorage.setItem('users', JSON.stringify(users));
+            }
         });
     </script>
 </body>
