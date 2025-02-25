@@ -1,0 +1,274 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Todo App</title>
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/css/bootstrap.min.css">
+    <link rel="stylesheet" href="https://fonts.googleapis.com/icon?family=Material+Icons">
+    <style>
+        body {
+            background-color: #f0f0f0;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        .container {
+            max-width: 800px;
+            margin: 40px auto;
+            padding: 20px;
+            background-color: #fff;
+            border: 1px solid #ddd;
+            border-radius: 10px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+        }
+        .login-page {
+            background-image: linear-gradient(to bottom, #33ccff, #3377ff);
+            color: #fff;
+            padding: 40px;
+            border-radius: 10px;
+        }
+        .todo-list {
+            padding: 20px;
+        }
+        .todo-item {
+            background-color: #f9f9f9;
+            padding: 10px;
+            border-bottom: 1px solid #ddd;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .todo-item:hover {
+            background-color: #f2f2f2;
+        }
+        .hidden {
+            display: none;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div id="login-page" style="display: block;">
+            <div class="login-page">
+                <h2>Login</h2>
+                <form id="login-form">
+                    <div class="form-group">
+                        <label for="username">Username:</label>
+                        <input type="text" class="form-control" id="login-username" title="Enter your username" placeholder="Enter your username" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="password">Password:</label>
+                        <input type="password" class="form-control" id="login-password" placeholder="Enter your password" required>
+                    </div>
+                    <button type="submit" class="btn btn-primary">Login</button>
+                    <p>Don't have an account? <a href="#" id="signup-link">Signup</a></p>
+                    <p>Forgot password? <a href="#" id="forgot-password-link">Reset</a></p>
+                    <div id="login-error" style="color: red;"></div>
+                </form>
+            </div>
+        </div>
+        <div id="signup-page" style="display: none;">
+            <div class="login-page">
+                <h2>Signup</h2>
+                <form id="signup-form">
+                    <div class="form-group">
+                        <label for="username">Username:</label>
+                        <input type="text" class="form-control" id="signup-username" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="email">Email:</label>
+                        <input type="email" class="form-control" id="signup-email" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="password">Password:</label>
+                        <input type="password" class="form-control" id="signup-password" required>
+                    </div>
+                    <button type="submit" class="btn btn-primary">Signup</button>
+                    <p>Already have an account? <a href="#" id="login-link">Login</a></p>
+                    <div id="signup-error" style="color: red;"></div>
+                </form>
+            </div>
+        </div>
+        <div id="todo-page" style="display: none;">
+            <nav class="navbar navbar-expand-lg navbar-light bg-light">
+                <div class="navbar-nav mr-auto">
+                    <button id="add-todo-btn" class="btn btn-sm btn-primary">
+                        Add Task
+                    </button>
+                </div>
+                <div class="navbar-nav ml-auto">
+                    <button id="logout-btn" class="btn btn-sm btn-danger">Logout</button>
+                </div>
+            </nav>
+            <div class="todo-list">
+                <h2>Todo List</h2>
+                <input type="text" id="search-todo" class="form-control" placeholder="Search todo...">
+                <ul id="todo-list">
+                </ul>
+                <div id="edit-modal" style="display: none;">
+                    <div class="modal-dialog" role="document">
+                        <div class="modal-content">
+                            <div class="modal-header">
+                                <h5 class="modal-title">Edit Todo</h5>
+                                <button type="button" class="close" aria-label="Close">
+                                    <span aria-hidden="true">&times;</span>
+                                </button>
+                            </div>
+                            <div class="modal-body">
+                                <input type="text" id="edit-todo-input" class="form-control">
+                            </div>
+                            <div class="modal-footer">
+                                <button type="button" class="btn btn-secondary" id="close-edit-modal">Close</button>
+                                <button type="button" class="btn btn-primary" id="save-edit-todo">Save changes</button>
+                            </div>
+                        </div>
+                    </div>
+        <div id="profile-page" class="hidden">
+            </div>
+        </div>
+        <div id="profile-page" style="display: none;">
+            <div class="login-page">
+                <h2>Profile</h2>
+                <p>Username: <span id="profile-username"></span></p>
+                <p>Email: <span id="profile-email"></span></p>
+                <button id="edit-profile-btn" class="btn btn-primary">Edit Profile</button>
+            </div>
+        </div>
+    </div>
+    <script src="https://code.jquery.com/jquery-3.2.1.min.js"></script>
+    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/js/bootstrap.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.css">
+    <script>
+        let users = JSON.parse(localStorage.getItem('users')) || [];
+        let todos = JSON.parse(localStorage.getItem('todos')) || [];
+        let loggedInUser = localStorage.getItem('user');
+
+        // Check if user is logged in
+        if (loggedInUser) {
+            $('#login-page').hide();
+            $('#signup-page').hide();
+            $('#todo-page').show();
+            renderTodos();
+        }
+
+        // Login functionality
+        $('#login-form').submit(function(e) {
+            e.preventDefault();
+            let username = $('#login-username').val();
+            let password = $('#login-password').val();
+            let user = users.find(u => u.username === username && u.password === password);
+            if (user) {
+                localStorage.setItem('user', username);
+                $('#login-page').hide();
+                $('#signup-page').hide();
+                $('#todo-page').show();
+                renderTodos();
+                toastr.success('Logged in successfully!');
+            } else {
+                $('#login-error').text('Invalid username or password');
+                toastr.error('Invalid username or password!');
+            }
+        });
+
+        // Signup functionality
+        $('#signup-form').submit(function(e) {
+            e.preventDefault();
+            let username = $('#signup-username').val();
+            let email = $('#signup-email').val();
+            let password = $('#signup-password').val();
+            if (users.find(u => u.username === username)) {
+                $('#signup-error').text('Username already taken');
+                toastr.error('Username already taken!');
+                return;
+            }
+            users.push({ username, email, password });
+            localStorage.setItem('users', JSON.stringify(users));
+            $('#signup-page').hide();
+            $('#login-page').show();
+            toastr.success('Signed up successfully!');
+        });
+
+        // Add todo functionality
+        $('#add-todo-btn').click(function() {
+            let todoText = prompt('Enter new todo:');
+            if (todoText) {
+                let currentTime = new Date().toLocaleString();
+                todos.push({ text: todoText, time: currentTime });
+                localStorage.setItem('todos', JSON.stringify(todos));
+                renderTodos();
+                toastr.success('Todo added successfully!');
+            }
+        });
+
+        // Render todos
+        function renderTodos() {
+            $('#todo-list').empty();
+            for (let i = 0; i < todos.length; i++) {
+                let todo = todos[i];
+                $('#todo-list').append(`<li class="todo-item">${todo.text} 
+                    <span style="font-size: 12px; color: #666;">${todo.time}</span>
+                    <div style="display: flex; justify-content: flex-end;">
+                        <button class="btn btn-sm btn-primary edit-todo-btn" data-index="${i}" style="margin-right: 5px;">Edit</button>
+                        <button class="btn btn-sm btn-danger delete-todo-btn" data-index="${i}">Delete</button>
+                    </div>
+                </li>`);
+            }
+            $('.edit-todo-btn').click(function() {
+                let index = $(this).data('index');
+                let todo = todos[index];
+                $('#edit-todo-input').val(todo.text);
+                $('#edit-modal').show();
+                $('#save-edit-todo').data('index', index);
+            });
+            $('.delete-todo-btn').click(function() {
+                let index = $(this).data('index');
+                todos.splice(index, 1);
+                localStorage.setItem('todos', JSON.stringify(todos));
+                renderTodos();
+                toastr.success('Todo deleted successfully!');
+            });
+        }
+
+        // Edit todo functionality
+        $('#close-edit-modal').click(function() {
+            $('#edit-modal').hide();
+        });
+        $('#save-edit-todo').click(function() {
+            let index = $(this).data('index');
+            let todoText = $('#edit-todo-input').val();
+            let currentTime = new Date().toLocaleString();
+            todos[index] = { text: todoText, time: currentTime };
+            localStorage.setItem('todos', JSON.stringify(todos));
+            renderTodos();
+            $('#edit-modal').hide();
+            toastr.success('Todo edited successfully!');
+        });
+
+        // Logout functionality
+        $('#logout-btn').click(function() {
+            localStorage.removeItem('user');
+            localStorage.removeItem('todos');
+            $('#todo-page').hide();
+            $('#login-page').show();
+            toastr.success('Logged out successfully!');
+        });
+
+        // Link functionality
+        $('#signup-link').click(function() {
+            $('#login-page').hide();
+            $('#signup-page').show();
+        });
+        $('#login-link').click(function() {
+            $('#signup-page').hide();
+            $('#login-page').show();
+        });
+        $('#forgot-password-link').click(function() {
+            // Add forgot password functionality
+        });
+        $('#edit-profile-btn').click(function() {
+            // Add edit profile functionality
+        });
+    </script>
+</body>
+</html>
