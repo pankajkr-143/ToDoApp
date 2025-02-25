@@ -41,9 +41,6 @@
         .todo-item:hover {
             background-color: #f2f2f2;
         }
-        .hidden {
-            display: none;
-        }
     </style>
 </head>
 <body>
@@ -54,11 +51,11 @@
                 <form id="login-form">
                     <div class="form-group">
                         <label for="username">Username:</label>
-                        <input type="text" class="form-control" id="login-username" title="Enter your username" placeholder="Enter your username" required>
+                        <input type="text" class="form-control" id="login-username" required>
                     </div>
                     <div class="form-group">
                         <label for="password">Password:</label>
-                        <input type="password" class="form-control" id="login-password" placeholder="Enter your password" required>
+                        <input type="password" class="form-control" id="login-password" required>
                     </div>
                     <button type="submit" class="btn btn-primary">Login</button>
                     <p>Don't have an account? <a href="#" id="signup-link">Signup</a></p>
@@ -123,7 +120,7 @@
                             </div>
                         </div>
                     </div>
-        <div id="profile-page" class="hidden">
+                </div>
             </div>
         </div>
         <div id="profile-page" style="display: none;">
@@ -142,14 +139,18 @@
     <script>
         let users = JSON.parse(localStorage.getItem('users')) || [];
         let todos = JSON.parse(localStorage.getItem('todos')) || [];
-        let loggedInUser = localStorage.getItem('user');
+        let loggedInUser = localStorage.getItem('loggedInUser');
+        let loginExpirationTime = JSON.parse(localStorage.getItem('loginExpirationTime')) || null;
 
         // Check if user is logged in
-        if (loggedInUser) {
+        if (loggedInUser && loginExpirationTime && new Date().getTime() / 1000 < loginExpirationTime) {
             $('#login-page').hide();
             $('#signup-page').hide();
             $('#todo-page').show();
             renderTodos();
+        } else {
+            localStorage.removeItem('loggedInUser');
+            localStorage.removeItem('loginExpirationTime');
         }
 
         // Login functionality
@@ -159,7 +160,10 @@
             let password = $('#login-password').val();
             let user = users.find(u => u.username === username && u.password === password);
             if (user) {
-                localStorage.setItem('user', username);
+                localStorage.setItem('loggedInUser', username);
+                let currentTime = new Date().getTime() / 1000;
+                let expirationTime = currentTime + 24 * 60 * 60; // 24 hours
+                localStorage.setItem('loginExpirationTime', JSON.stringify(expirationTime));
                 $('#login-page').hide();
                 $('#signup-page').hide();
                 $('#todo-page').show();
@@ -171,22 +175,13 @@
             }
         });
 
-        // Signup functionality
-        $('#signup-form').submit(function(e) {
-            e.preventDefault();
-            let username = $('#signup-username').val();
-            let email = $('#signup-email').val();
-            let password = $('#signup-password').val();
-            if (users.find(u => u.username === username)) {
-                $('#signup-error').text('Username already taken');
-                toastr.error('Username already taken!');
-                return;
-            }
-            users.push({ username, email, password });
-            localStorage.setItem('users', JSON.stringify(users));
-            $('#signup-page').hide();
+        // Logout functionality
+        $('#logout-btn').click(function() {
+            localStorage.removeItem('loggedInUser');
+            localStorage.removeItem('loginExpirationTime');
+            $('#todo-page').hide();
             $('#login-page').show();
-            toastr.success('Signed up successfully!');
+            toastr.success('Logged out successfully!');
         });
 
         // Add todo functionality
@@ -243,15 +238,6 @@
             renderTodos();
             $('#edit-modal').hide();
             toastr.success('Todo edited successfully!');
-        });
-
-        // Logout functionality
-        $('#logout-btn').click(function() {
-            localStorage.removeItem('user');
-            localStorage.removeItem('todos');
-            $('#todo-page').hide();
-            $('#login-page').show();
-            toastr.success('Logged out successfully!');
         });
 
         // Link functionality
