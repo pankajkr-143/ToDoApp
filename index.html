@@ -50,10 +50,10 @@
         }
         .task-list {
             background-color: #ffffff;
-            padding: 10px;
+            padding: 40px;
             border-radius: 10px;
             box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
-            width: 100%;
+            width: 80%;
             margin: 40px auto;
         }
         .task-item {
@@ -113,6 +113,22 @@
         .edit-task:hover {
             background-color: #1380b7;
         }
+        #toast-container {
+            position: fixed;
+            top: 10px;
+            right: 10px;
+            z-index: 1000;
+        }
+        .toast {
+            border-radius: 10px;
+            padding: 10px;
+            background-color: #333;
+            color: #fff;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+        }
+        .toast.fade {
+            opacity: 0.5;
+        }
     </style>
 </head>
 <body>
@@ -169,6 +185,12 @@
                     </div>
                 </div>
             </div>
+        </div>
+    </div>
+    <div id="toast-container">
+        <div class="toast" id="toast" style="display: none;">
+            <span id="toast-message"></span>
+            <button class="btn-close" id="toast-close"></button>
         </div>
     </div>
     <div class="modal fade" id="add-task-modal" tabindex="-1" aria-labelledby="add-task-modal-label" aria-hidden="true">
@@ -230,6 +252,7 @@
             document.getElementById('login-form').style.display = 'block';
             document.getElementById('signup-form').style.display = 'none';
             document.getElementById('task-list').style.display = 'none';
+            showToast('You have been logged out', 'success');
         });
 
         document.getElementById('login-form-data').addEventListener('submit', (e) => {
@@ -243,6 +266,9 @@
                 document.getElementById('signup-form').style.display = 'none';
                 document.getElementById('task-list').style.display = 'block';
                 renderTasks();
+                showToast('You have been logged in', 'success');
+            } else {
+                showToast('Invalid username or password', 'error');
             }
         });
 
@@ -256,6 +282,7 @@
             localStorage.setItem('users', JSON.stringify(users));
             document.getElementById('login-form').style.display = 'block';
             document.getElementById('signup-form').style.display = 'none';
+            showToast('You have been signed up', 'success');
         });
 
         document.getElementById('add-task-form').addEventListener('submit', (e) => {
@@ -268,6 +295,7 @@
             document.getElementById('task-input').value = '';
             const modal = bootstrap.Modal.getInstance(document.getElementById('add-task-modal'));
             modal.hide();
+            showToast('Task added successfully', 'success');
         });
 
         document.getElementById('task-table-body').addEventListener('click', (e) => {
@@ -276,6 +304,7 @@
                 tasks.splice(taskIndex, 1);
                 localStorage.setItem('tasks', JSON.stringify(tasks));
                 renderTasks();
+                showToast('Task deleted successfully', 'success');
             } else if (e.target.classList.contains('edit-task')) {
                 const taskIndex = e.target.dataset.index;
                 const task = tasks[taskIndex];
@@ -287,6 +316,7 @@
                     renderTasks();
                     const modal = bootstrap.Modal.getInstance(document.getElementById('edit-task-modal'));
                     modal.hide();
+                    showToast('Task edited successfully', 'success');
                 });
                 const modal = new bootstrap.Modal(document.getElementById('edit-task-modal'));
                 modal.show();
@@ -296,6 +326,7 @@
                 task.completed = !task.completed;
                 localStorage.setItem('tasks', JSON.stringify(tasks));
                 renderTasks();
+                showToast(task.completed ? 'Task completed' : 'Task uncompleted', 'success');
             }
         });
 
@@ -328,6 +359,20 @@
                     taskTableBody.appendChild(row);
                 }
             });
+        }
+
+        function showToast(message, type) {
+            const toast = document.getElementById('toast');
+            toast.style.display = 'block';
+            document.getElementById('toast-message').innerHTML = message;
+            if (type === 'success') {
+                toast.style.backgroundColor = '#28a745';
+            } else if (type === 'error') {
+                toast.style.backgroundColor = '#dc3545';
+            }
+            setTimeout(() => {
+                toast.style.display = 'none';
+            }, 3000);
         }
     </script>
 </body>
